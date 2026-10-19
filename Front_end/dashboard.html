@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - College Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --bg-main: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-dark: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --upload-blue: #0095ff;
+            --chat-bubble-self: #dcf8c6;
+            --chat-bubble-other: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            background-image:
+                linear-gradient(rgba(243, 244, 246, 0.18), rgba(243, 244, 246, 0.18)),
+                url('assets/dashboard-background.png');
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        
+        /* Sidebar */
+        .sidebar { width: 76px; flex: 0 0 76px; background-color: rgba(255, 255, 255, 0.3); backdrop-filter: blur(3px); border-right: 1px solid rgba(229, 231, 235, 0.68); display: flex; flex-direction: column; z-index: 10; transition: width 220ms ease, flex-basis 220ms ease; }
+        .sidebar.expanded { width: 248px; flex-basis: 248px; }
+        .sidebar-header { min-height: 70px; padding: 14px 0; font-size: 20px; font-weight: 700; border-bottom: 1px solid rgba(229, 231, 235, 0.68); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+        .sidebar-toggle { width: 44px; height: 44px; display: grid; place-items: center; color: #374151; border: 0; border-radius: 12px; background: transparent; cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+        .sidebar-toggle:hover { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+        .sidebar-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+        .sidebar-brand { display: none; align-items: center; gap: 8px; white-space: nowrap; }
+        .sidebar-brand span { color: var(--primary); }
+        .sidebar.expanded .sidebar-header { flex-direction: row; justify-content: flex-start; padding: 12px 16px; }
+        .sidebar.expanded .sidebar-brand { display: flex; }
+        .nav-menu { list-style: none; padding: 18px 10px; flex-grow: 1; }
+        .nav-menu li { min-height: 48px; padding: 0; cursor: pointer; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 14px; border-radius: 14px; margin-bottom: 6px; transition: all 0.2s; }
+        .nav-menu li:hover, .nav-menu li.active { background-color: var(--primary-light); color: var(--primary); }
+        .nav-icon { width: 24px; height: 24px; flex: 0 0 24px; display: grid; place-items: center; }
+        .nav-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .nav-label { display: none; white-space: nowrap; }
+        .sidebar.expanded .nav-menu { padding: 18px 12px; }
+        .sidebar.expanded .nav-menu li { justify-content: flex-start; padding: 0 14px; }
+        .sidebar.expanded .nav-label { display: inline; }
+
+        /* Main Workspace */
+        .main-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: transparent;
+        }
+        .top-bar { min-height: 64px; background: linear-gradient(105deg, #08bfc4 0%, #268cdf 58%, #3978d8 100%); color: white; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 10px rgba(15, 65, 125, 0.18); }
+        .toolbar-left, .toolbar-actions, .toolbar-brand, .toolbar-status, .user-profile { display: flex; align-items: center; }
+        .toolbar-left { gap: 18px; min-width: 0; }
+        .toolbar-brand { gap: 10px; color: white; text-decoration: none; font-size: 15px; font-weight: 700; white-space: nowrap; }
+        .toolbar-home { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; color: white; background: transparent; cursor: pointer; }
+        .toolbar-home:hover, .toolbar-button:hover { background: rgba(255,255,255,.16); }
+        .toolbar-home svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .toolbar-divider { width: 1px; height: 26px; background: rgba(255,255,255,.3); flex: 0 0 1px; }
+        .toolbar-actions { gap: 4px; }
+        .toolbar-button { min-height: 38px; padding: 0 12px; display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.9); background: transparent; border: 0; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+        .toolbar-button.active { color: white; background: rgba(255,255,255,.18); }
+        .toolbar-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .toolbar-status { gap: 7px; color: rgba(255,255,255,.9); font-size: 12px; white-space: nowrap; }
+        .toolbar-status svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .user-profile { gap: 10px; font-weight: 500; white-space: nowrap; }
+        .role-badge { background-color: rgba(255,255,255,.2); color: white; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .avatar { width: 36px; height: 36px; background-color: rgba(255,255,255,.2); color: white; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .profile-container { position: relative; cursor: pointer; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 50px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md); width: 160px; padding: 8px 0; z-index: 100; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item { padding: 10px 16px; font-size: 14px; color: #ef4444; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .dropdown-item:hover { background-color: #fef2f2; }
+
+        .content-container { padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+        /* Stream View */
+        .course-banner { background: linear-gradient(135deg, rgba(79, 70, 229, 0.9) 0%, rgba(147, 51, 234, 0.9) 100%); backdrop-filter: blur(2px); border-radius: 16px; padding: 32px; color: white; margin: 0 0 20px; box-shadow: var(--shadow-md); }
+        .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .overview-card { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(4px); border: 1px solid rgba(229, 231, 235, 0.78); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-sm); }
+        .overview-card h3 { margin-bottom: 6px; }
+        .overview-card p { color: var(--text-muted); font-size: 14px; }
+        .stat-row { display: flex; justify-content: space-between; font-weight: 500; }
+        .stat-row span:last-child { color: var(--primary); font-weight: 700; }
+        .materials-section { background: rgba(255, 255, 255, 0.68); backdrop-filter: blur(4px); border: 1px solid rgba(229, 231, 235, 0.78); border-radius: 16px; padding: 24px; }
+        .materials-section-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 20px; margin-bottom: 20px; }
+        .materials-section-header p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+        .materials-subheading { font-size: 16px; margin: 22px 0 12px; }
+        .material-card { background: rgba(255, 255, 255, 0.88); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm); margin-bottom: 14px; }
+        .material-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .material-action { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 8px 14px; border: 0; border-radius: 8px; background: var(--primary-light); color: var(--primary); text-decoration: none; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .material-action.primary { background: var(--primary); color: white; }
+        .material-action:disabled { opacity: 0.65; cursor: wait; }
+        .offline-empty { color: var(--text-muted); font-size: 14px; padding: 14px 0; }
+        .create-post-card { background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(3px); border: 1px solid rgba(229, 231, 235, 0.78); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; }
+        .create-post-input { background: var(--bg-main); color: var(--text-muted); padding: 14px 20px; border-radius: 999px; flex-grow: 1; font-size: 15px; }
+        .material-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .material-content { background: rgba(243, 244, 246, 0.74); backdrop-filter: blur(2px); border-left: 4px solid var(--primary); padding: 16px; border-radius: 0 8px 8px 0; font-size: 15px; }
+
+        @media (max-width: 1024px) {
+            .content-container { padding: 22px; }
+            .toolbar-status, .toolbar-left > .toolbar-divider:last-of-type { display: none; }
+        }
+        @media (max-width: 560px) {
+            .content-container { padding: 16px; }
+            .course-banner { padding: 26px 22px; }
+            .course-banner h1 { font-size: 25px; }
+            .overview-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+            .overview-card, .materials-section { padding: 18px; }
+            .top-bar { min-height: 58px; padding: 0 10px; gap: 6px; }
+            .toolbar-left { gap: 7px; }
+            .toolbar-brand span, .toolbar-divider, .toolbar-button:not(.active), .toolbar-status, #usernameDisplay { display: none; }
+            .toolbar-button { padding: 0 8px; }
+            .toolbar-actions { gap: 0; }
+            .user-profile { gap: 6px; }
+            .role-badge { padding: 4px 7px; }
+        }
+
+        /* Forms */
+        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 14px; font-weight: 600; }
+        .form-group input, .form-group select { padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel, .btn-submit { padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-cancel { background: transparent; color: var(--text-muted); }
+        .btn-submit { background: var(--upload-blue); color: white; }
+
+        /* Chat Layout */
+        .chat-container { display: flex; height: calc(100vh - 140px); background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
+        .chat-sidebar { width: 320px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: #f8fafc; }
+        .chat-sidebar-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .chat-group-list { flex-grow: 1; overflow-y: auto; list-style: none; }
+        .group-item { padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .group-item:hover, .group-item.active { background-color: var(--primary-light); }
+        .chat-main { flex-grow: 1; display: flex; flex-direction: column; background: #ece5dd; }
+        .chat-header { padding: 16px 24px; background: #fff; border-bottom: 1px solid var(--border-color); font-weight: 600; }
+        .chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .chat-bubble { max-width: 60%; padding: 10px 14px; border-radius: 8px; font-size: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .chat-bubble.self { background-color: var(--chat-bubble-self); align-self: flex-end; }
+        .chat-bubble.other { background-color: var(--chat-bubble-other); align-self: flex-start; }
+        .chat-input-bar { padding: 12px 16px; background: #f0f2f5; display: flex; gap: 12px; align-items: center; }
+        .chat-input-bar input { flex-grow: 1; padding: 12px 16px; border-radius: 24px; border: 1px solid var(--border-color); outline: none; }
+        .chat-send-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Expand navigation" aria-expanded="false" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <div class="sidebar-brand">🎓 <span>Portal</span></div>
+        </div>
+        <ul class="nav-menu">
+            <li id="nav-stream" class="active" title="Stream" aria-label="Stream" onclick="switchView('stream')">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg></span><span class="nav-label">Stream</span>
+            </li>
+            <li id="nav-chat" title="Study Groups" aria-label="Study Groups" onclick="switchView('chat')">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5zM6 10v6c3 3 9 3 12 0v-6M22 8v7" /></svg></span><span class="nav-label">Study Groups</span>
+            </li>
+            <li id="nav-people" title="People & Attendance" aria-label="People & Attendance" onclick="switchView('people')">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18M8 14h3M8 17h6" /></svg></span><span class="nav-label">People & Attendance</span>
+            </li>
+            <li id="nav-upload" title="Upload Materials" aria-label="Upload Materials" style="display: none;" onclick="switchView('upload')">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M12 7v8m-3-3 3 3 3-3M8 18h8" /></svg></span><span class="nav-label">Upload Materials</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-wrapper">
+        <header class="top-bar">
+            <div class="toolbar-left">
+                <a class="toolbar-brand" href="dashboard.html" aria-label="College Portal home">
+                    <span class="toolbar-home" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg></span>
+                    <span>College Portal</span>
+                </a>
+                <span class="toolbar-divider" aria-hidden="true"></span>
+                <nav class="toolbar-actions" aria-label="Workspace navigation">
+                    <button class="toolbar-button active" id="toolbar-stream" type="button" onclick="switchView('stream')">Stream</button>
+                    <button class="toolbar-button" id="toolbar-chat" type="button" onclick="switchView('chat')">Study Groups</button>
+                    <button class="toolbar-button" id="toolbar-people" type="button" onclick="switchView('people')">People</button>
+                </nav>
+                <span class="toolbar-divider" aria-hidden="true"></span>
+                <div class="toolbar-status" title="Downloaded files are saved on this device">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6.2 8.5 4.8 4.8 0 0 0 7 18Z" /><path d="m9 13 3 3 3-3m-3 3V9" /></svg>
+                    <span>Offline files</span>
+                </div>
+            </div>
+            <div class="user-profile">
+                <span class="role-badge" id="userRoleBadge">Loading...</span>
+                <span id="usernameDisplay">User</span>
+                <div class="profile-container" onclick="toggleDropdown()">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <div class="dropdown-item" onclick="logout()">🚪 Sign Out</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-container">
+            
+            <!-- VIEW 1: STREAM -->
+            <div id="stream-view">
+                <div class="course-banner">
+                    <h1>Software Engineering Project Management</h1>
+                    <p>Section A • Fall Semester 2026</p>
+                </div>
+                <div class="overview-grid">
+                    <section class="overview-card">
+                        <h3>Upcoming</h3>
+                        <p>Woohoo, no work due in soon!</p>
+                    </section>
+                    <section class="overview-card">
+                        <h3>Class Stats</h3>
+                        <div class="stat-row"><span>Total Materials</span><span id="statMaterialCount">0</span></div>
+                    </section>
+                </div>
+                <section class="materials-section" aria-labelledby="yourMaterialsHeading">
+                    <div class="materials-section-header">
+                        <div>
+                            <h2 id="yourMaterialsHeading">Your materials</h2>
+                            <p>Save class files for access when you’re offline.</p>
+                        </div>
+                    </div>
+                    <div class="create-post-card" id="uploadTriggerBtn" style="display: none; margin-bottom: 18px;" onclick="switchView('upload')">
+                        <div class="avatar">T</div>
+                        <div class="create-post-input">Share something with your class...</div>
+                    </div>
+                    <h3 class="materials-subheading">Class materials</h3>
+                    <div id="materialsList"><div class="offline-empty">Loading class materials...</div></div>
+                    <h3 class="materials-subheading">Saved for offline</h3>
+                    <div id="offlineMaterialsList"><div class="offline-empty">Loading saved materials...</div></div>
+                </section>
+                </div>
+            </div>
+
+            <!-- VIEW 2: UPLOAD (Teachers Only) -->
+            <div id="upload-view" style="display: none; max-width: 800px; margin: 0 auto;">
+                <div style="background-color: var(--upload-blue); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0;">
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 600;">File Upload</h2>
+                </div>
+                <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: var(--shadow-md);">
+                    <form id="uploadForm">
+                        <div class="form-group">
+                            <label>Document Title</label>
+                            <input type="text" id="materialTitle" required placeholder="e.g., Unit 1 Lecture Notes">
+                        </div>
+                        <div class="form-group">
+                            <label>Subject Label</label>
+                            <input type="text" id="materialSubject" required placeholder="e.g., Economics">
+                        </div>
+                        <div class="form-group">
+                            <label>Document Visibility</label>
+                            <select id="materialVisibility">
+                                <option value="true">Public (Students can view)</option>
+                                <option value="false">Private (Only Teachers can view)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="border: 2px dashed #cbd5e1; padding: 40px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                            <input type="file" id="materialFile" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancel" onclick="switchView('stream')">Cancel</button>
+                            <button type="submit" class="btn-submit">Upload Document</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- VIEW 3: CHAT -->
+            <div id="chat-view" style="display: none;">
+                <div class="chat-container">
+                    <div class="chat-sidebar">
+                        <div class="chat-sidebar-header">
+                            <h3 style="font-size: 16px;">Groups</h3>
+                            <button id="createGroupBtn" onclick="promptCreateGroup()" style="background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: none;">+ New Group</button>
+                        </div>
+                        <ul class="chat-group-list" id="groupList"></ul>
+                    </div>
+                    <div class="chat-main">
+                        <div class="chat-header" id="currentChatHeader">Select a study group to start chatting</div>
+                        <div class="chat-messages" id="chatMessagesBox"></div>
+                        <form class="chat-input-bar" id="chatForm" onsubmit="sendMessage(event)">
+                            <input type="text" id="chatInput" placeholder="Type a message..." disabled autocomplete="off">
+                            <button type="submit" class="chat-send-btn" id="sendBtn" disabled>Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: PEOPLE & ATTENDANCE -->
+            <div id="people-view" style="display: none; max-width: 800px; margin: 0 auto;">
+                <div style="background-color: var(--primary); color: white; padding: 20px; border-radius: 12px 12px 0 0;">
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 600;">People & Attendance</h2>
+                </div>
+                <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: var(--shadow-md);">
+                    
+                    <!-- Teacher View -->
+                    <div id="attendanceControls" style="display: none;">
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">Mark attendance for today. Default is set to Present.</p>
+                        <form id="attendanceForm" onsubmit="submitAttendance(event)">
+                            <div id="studentListContainer" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;"></div>
+                            <div class="form-actions"><button type="submit" class="btn-submit" style="background: var(--primary);">Save Attendance</button></div>
+                        </form>
+                    </div>
+                    
+                    <!-- Student View -->
+                    <div id="classmateListContainer" style="display: none;">
+                        <h3 style="margin-bottom: 15px;">Your Classmates</h3>
+                        <ul id="classmateList" style="list-style: none; padding: 0;"></ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8001";
+        let currentUserId = 1; 
+        let currentUserName = "User";
+        let activeGroupId = null;
+        let chatSocket = null;
+        const OFFLINE_DB_NAME = 'college-portal-materials';
+        const OFFLINE_STORE_NAME = 'saved-materials';
+
+        function openOfflineDatabase() {
+            return new Promise((resolve, reject) => {
+                if (!('indexedDB' in window)) { reject(new Error('Offline storage is not supported in this browser.')); return; }
+                const request = indexedDB.open(OFFLINE_DB_NAME, 1);
+                request.onupgradeneeded = () => request.result.createObjectStore(OFFLINE_STORE_NAME, { keyPath: 'id' });
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Could not open offline storage.'));
+            });
+        }
+
+        async function getSavedMaterials() {
+            const db = await openOfflineDatabase();
+            return new Promise((resolve, reject) => {
+                const request = db.transaction(OFFLINE_STORE_NAME, 'readonly').objectStore(OFFLINE_STORE_NAME).getAll();
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => reject(request.error || new Error('Could not read saved materials.'));
+            });
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+        }
+
+        function materialFileUrl(filePath) {
+            return new URL(filePath, `${API_URL}/`).href;
+        }
+
+        async function renderOfflineMaterials() {
+            const list = document.getElementById('offlineMaterialsList');
+            try {
+                const savedMaterials = await getSavedMaterials();
+                document.getElementById('statMaterialCount').innerText = String(Math.max(Number(document.getElementById('statMaterialCount').innerText) || 0, savedMaterials.length));
+                if (!savedMaterials.length) {
+                    list.innerHTML = '<p class="offline-empty">Files you save will appear here for offline access.</p>';
+                    return;
+                }
+                list.innerHTML = savedMaterials.map(item => {
+                    const localUrl = URL.createObjectURL(item.blob);
+                    return `<article class="material-card">
+                        <div class="material-header"><div class="avatar" style="background-color:#10b981;">${escapeHTML((item.subject || 'M').charAt(0).toUpperCase())}</div>
+                        <div><h4>${escapeHTML(item.title)}</h4><p>${escapeHTML(item.subject || 'General')} · Saved offline</p></div></div>
+                        <div class="material-actions"><a class="material-action primary" href="${localUrl}" target="_blank" rel="noopener">Open saved file</a>
+                        <a class="material-action" href="${localUrl}" download="${escapeHTML(item.fileName || item.title || 'material')}">Download a copy</a></div>
+                    </article>`;
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<p class="offline-empty">Offline file storage is unavailable in this browser.</p>';
+                console.error('Could not load offline materials.', error);
+            }
+        }
+
+        async function saveMaterialOffline(materialId, button) {
+            const material = window.classMaterials?.find(item => String(item.id) === String(materialId));
+            if (!material) return;
+            button.disabled = true;
+            button.textContent = 'Saving…';
+            try {
+                const response = await fetch(materialFileUrl(material.file_url));
+                if (!response.ok) throw new Error('The file could not be downloaded.');
+                const blob = await response.blob();
+                const fileName = material.file_url.split('/').pop() || material.title || 'material';
+                const db = await openOfflineDatabase();
+                await new Promise((resolve, reject) => {
+                    const transaction = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
+                    transaction.objectStore(OFFLINE_STORE_NAME).put({
+                        id: String(material.id), materialId: material.id, title: material.title,
+                        subject: material.subject, fileUrl: material.file_url, fileName, blob, savedAt: Date.now()
+                    });
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = () => reject(transaction.error || new Error('Could not save this file.'));
+                });
+                button.textContent = 'Saved offline';
+                await renderOfflineMaterials();
+            } catch (error) {
+                console.error('Could not save material offline.', error);
+                button.disabled = false;
+                button.textContent = 'Try download again';
+                alert(error.message || 'Could not save this material for offline access.');
+            }
+        }
+
+        window.onload = async function() {
+            const token = localStorage.getItem('access_token');
+            if (!token) { window.location.href = 'index.html'; return; }
+
+            renderOfflineMaterials();
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('Offline app shell could not be enabled.', error));
+
+            let role = localStorage.getItem('user_role') || 'student';
+            currentUserName = localStorage.getItem('username') || role;
+            try {
+                const response = await fetch(`${API_URL}/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (response.ok) {
+                    const profile = await response.json();
+                    currentUserId = profile.id;
+                    currentUserName = profile.username;
+                    role = profile.role;
+                    localStorage.setItem('username', profile.username);
+                    localStorage.setItem('user_role', profile.role);
+                }
+            } catch (err) { console.error('Could not load account profile.', err); }
+            document.getElementById('userRoleBadge').innerText = role;
+            document.getElementById('usernameDisplay').innerText = currentUserName;
+            document.getElementById('userAvatar').innerText = role.charAt(0).toUpperCase(); 
+
+            if (role === 'teacher' || role === 'admin') {
+                document.getElementById('uploadTriggerBtn').style.display = 'flex';
+                document.getElementById('nav-upload').style.display = 'flex';
+                document.getElementById('createGroupBtn').style.display = 'block';
+            }
+            fetchMaterials(token);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            const expanded = sidebar.classList.toggle('expanded');
+            toggle.setAttribute('aria-expanded', String(expanded));
+            toggle.setAttribute('aria-label', expanded ? 'Collapse navigation' : 'Expand navigation');
+        }
+
+        // --- VIEW SWITCHER ---
+        function switchView(viewName) {
+            document.querySelectorAll('.nav-menu li').forEach(el => el.classList.remove('active'));
+            if(document.getElementById('nav-' + viewName)) document.getElementById('nav-' + viewName).classList.add('active');
+            document.querySelectorAll('.toolbar-button').forEach(el => el.classList.remove('active'));
+            if (document.getElementById('toolbar-' + viewName)) document.getElementById('toolbar-' + viewName).classList.add('active');
+
+            // Hide all views explicitly so they don't overlap or show a blank screen!
+            document.getElementById('stream-view').style.display = 'none';
+            document.getElementById('upload-view').style.display = 'none';
+            document.getElementById('chat-view').style.display = 'none';
+            document.getElementById('people-view').style.display = 'none';
+
+            // Show target view
+            document.getElementById(viewName + '-view').style.display = 'block';
+
+            if (viewName === 'chat') { loadGroups(); }
+            if (viewName === 'people') { loadPeople(); }
+        }
+
+        // --- MATERIALS & UPLOADS ---
+        async function fetchMaterials(token) {
+            const materialsListDiv = document.getElementById('materialsList');
+            try {
+                const res = await fetch(`${API_URL}/materials/`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) throw new Error('Could not load class materials.');
+                const materials = await res.json();
+                window.classMaterials = materials;
+                document.getElementById('statMaterialCount').innerText = materials.length;
+                if (materials.length === 0) { materialsListDiv.innerHTML = '<p class="offline-empty">No class materials posted yet.</p>'; return; }
+                const savedMaterials = await getSavedMaterials().catch(() => []);
+                const savedIds = new Set(savedMaterials.map(item => String(item.id)));
+                materialsListDiv.innerHTML = materials.map(material => {
+                    const fileUrl = materialFileUrl(material.file_url);
+                    const isSaved = savedIds.has(String(material.id));
+                    return `<article class="material-card">
+                        <div class="material-header"><div class="avatar" style="background-color:#10b981;">${escapeHTML((material.subject || 'M').charAt(0).toUpperCase())}</div>
+                        <div><h4>${escapeHTML(material.title || 'Class material')}</h4><p>${escapeHTML(material.subject || 'General')}</p></div></div>
+                        <div class="material-actions"><a class="material-action" href="${fileUrl}" target="_blank" rel="noopener">View document</a>
+                        <button class="material-action primary" type="button" ${isSaved ? 'disabled' : ''} onclick="saveMaterialOffline('${escapeHTML(material.id)}', this)">${isSaved ? 'Saved offline' : 'Download for offline'}</button></div>
+                    </article>`;
+                }).join('');
+                renderOfflineMaterials();
+            } catch (err) {
+                window.classMaterials = [];
+                materialsListDiv.innerHTML = '<p class="offline-empty">You’re offline or the class materials could not load. Saved files remain available below.</p>';
+            }
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+            const formData = new FormData();
+            formData.append('title', document.getElementById('materialTitle').value);
+            formData.append('subject', document.getElementById('materialSubject').value);
+            formData.append('is_public', document.getElementById('materialVisibility').value);
+            formData.append('file', document.getElementById('materialFile').files[0]);
+
+            const res = await fetch(`${API_URL}/materials/upload`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
+                body: formData
+            });
+
+            if (res.ok) { switchView('stream'); fetchMaterials(localStorage.getItem('access_token')); } 
+            else { alert("Upload failed."); }
+        });
+
+        // --- ATTENDANCE & PEOPLE ---
+        async function loadPeople() {
+            const token = localStorage.getItem('access_token');
+            const role = localStorage.getItem('user_role');
+            try {
+                const res = await fetch(`${API_URL}/attendance/students`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const students = await res.json();
+                    if (role === 'teacher' || role === 'admin') {
+                        document.getElementById('attendanceControls').style.display = 'block';
+                        const container = document.getElementById('studentListContainer');
+                        container.innerHTML = '';
+                        students.forEach(s => {
+                            container.innerHTML += `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
+                                    <strong>${s.username}</strong>
+                                    <div style="display: flex; gap: 15px;">
+                                        <label><input type="radio" name="student_${s.id}" value="Present" checked> Present</label>
+                                        <label style="color: red;"><input type="radio" name="student_${s.id}" value="Absent"> Absent</label>
+                                    </div>
+                                </div>`;
+                        });
+                    } else {
+                        document.getElementById('classmateListContainer').style.display = 'block';
+                        const list = document.getElementById('classmateList');
+                        list.innerHTML = '';
+                        students.forEach(s => list.innerHTML += `<li style="padding: 12px; border-bottom: 1px solid #eee;">${s.username}</li>`);
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function submitAttendance(e) {
+            e.preventDefault();
+            const inputs = document.getElementById('attendanceForm').querySelectorAll('input[type="radio"]:checked');
+            const records = Array.from(inputs).map(input => ({ student_id: parseInt(input.name.split('_')[1]), status: input.value }));
+            
+            const res = await fetch(`${API_URL}/attendance/`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ records })
+            });
+            if (res.ok) { alert("✅ Attendance saved!"); } else { alert("❌ Failed to save."); }
+        }
+
+        // --- CHAT GROUPS ---
+        async function loadGroups() {
+            const groupList = document.getElementById('groupList');
+            try {
+                const res = await fetch(`${API_URL}/chat/groups`);
+                const groups = await res.json();
+                groupList.innerHTML = '';
+                groups.forEach(g => {
+                    const li = document.createElement('li');
+                    li.className = `group-item ${activeGroupId === g.id ? 'active' : ''}`;
+                    li.innerHTML = `<h4>${g.name}</h4><p style="font-size: 12px; color: gray;">${g.description}</p>`;
+                    li.onclick = () => selectGroup(g.id, g.name);
+                    groupList.appendChild(li);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function promptCreateGroup() {
+            const name = prompt("Group Name:"); if (!name) return;
+            const desc = prompt("Description:") || "";
+            const res = await fetch(`${API_URL}/chat/groups?name=${encodeURIComponent(name)}&description=${encodeURIComponent(desc)}`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+            if (res.ok) loadGroups();
+        }
+
+        function selectGroup(groupId, groupName) {
+            activeGroupId = groupId;
+            document.getElementById('currentChatHeader').innerText = `💬 ${groupName}`;
+            document.getElementById('chatInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('chatMessagesBox').innerHTML = '';
+            loadGroups();
+
+            if (chatSocket) chatSocket.close();
+            chatSocket = new WebSocket(`ws://127.0.0.1:8001/chat/ws/${groupId}`);
+            chatSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const box = document.getElementById('chatMessagesBox');
+                box.innerHTML += `<div class="chat-bubble ${data.sender_name === currentUserName ? 'self' : 'other'}"><span style="font-size: 11px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 4px;">${data.sender_name}</span>${data.content}</div>`;
+                box.scrollTop = box.scrollHeight;
+            };
+        }
+
+        function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            if (!input.value.trim() || !chatSocket) return;
+            chatSocket.send(JSON.stringify({ content: input.value, sender_id: currentUserId, sender_name: currentUserName }));
+            input.value = '';
+        }
+
+        function toggleDropdown() { document.getElementById('profileDropdown').classList.toggle('show'); }
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+    </script>
+</body>
+</html>

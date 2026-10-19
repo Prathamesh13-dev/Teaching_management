@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management Portal</title>
+    <!-- Google Fonts for Clean Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+            background: #ead7ad;
+            color: #202124;
+            min-height: 100vh;
+        }
+
+        /* --- Header / Navigation --- */
+        header {
+            position: absolute;
+            z-index: 3;
+            top: 12px;
+            left: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 500;
+            color: #5f6368;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo span {
+            color: #1a73e8;
+            font-weight: 700;
+        }
+
+        /* --- Scrollable graduation poster --- */
+        .landing-page {
+            padding: 0;
+        }
+
+        .poster-stage {
+            position: relative;
+            isolation: isolate;
+            width: min(100%, 960px);
+            aspect-ratio: 2 / 3;
+            margin: 0 auto;
+            overflow: hidden;
+            background: #ead7ad url('assets/graduation-background.png') center top / 100% 100% no-repeat;
+        }
+
+        .logo {
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: rgba(255, 250, 239, 0.42);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            box-shadow: 0 2px 8px rgba(57, 43, 25, 0.07);
+            font-size: 19px;
+        }
+
+        .inspiring-title {
+            position: absolute;
+            z-index: 1;
+            top: 6%;
+            left: 8%;
+            right: 8%;
+            color: #171717;
+            text-align: center;
+            font-size: clamp(32px, 5.4vw, 52px);
+            font-weight: 500;
+            line-height: 1.06;
+            letter-spacing: -1.5px;
+            animation: title-arrive 900ms cubic-bezier(.2,.75,.25,1) both;
+        }
+
+        @keyframes title-arrive {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Sign in card revealed as the poster scrolls into view --- */
+        .hero {
+            position: absolute;
+            z-index: 2;
+            top: 59%;
+            left: 50%;
+            width: min(82%, 520px);
+            margin: 0;
+            padding: 24px 26px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.62);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            box-shadow: 0 12px 34px rgba(42, 34, 24, 0.16);
+            text-align: center;
+            opacity: 0;
+            transform: translate(-50%, 46px) scale(0.98);
+            transition: opacity 750ms ease, transform 750ms cubic-bezier(.2,.75,.25,1);
+        }
+
+        .hero.is-visible {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1);
+        }
+
+        .hero h1 {
+            font-size: clamp(28px, 4vw, 36px);
+            font-weight: 700;
+            line-height: 1.15;
+            color: #202124;
+            letter-spacing: -0.6px;
+            margin-bottom: 14px;
+        }
+
+        .hero p {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Google-Style Buttons */
+        .btn {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 11px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #1a73e8;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #1557b0;
+            box-shadow: 0 1px 3px 1px rgba(66, 133, 244, 0.25);
+        }
+
+        .btn-outline {
+            background-color: #ffffff;
+            color: #1a73e8;
+            border: 1px solid #dadce0;
+        }
+
+        .btn-outline:hover {
+            background-color: #f8fafd;
+            border-color: #1a73e8;
+        }
+
+        /* --- Modal Popup (Role Selection & Auth) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(68, 49, 27, 0.48);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-card {
+            display: grid;
+            grid-template-columns: minmax(220px, 0.78fr) minmax(390px, 1.22fr);
+            width: 100%;
+            max-width: 860px;
+            min-height: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 24px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 22px 60px rgba(47, 34, 17, 0.34);
+            position: relative;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .auth-aside {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 38px 32px;
+            color: white;
+            background:
+                radial-gradient(circle at 18% 78%, rgba(255, 184, 75, 0.2), transparent 32%),
+                radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px) 0 0 / 18px 18px,
+                linear-gradient(145deg, #563b7b, #85477e 58%, #a74e78);
+        }
+
+        .auth-aside-brand {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .auth-aside-copy {
+            max-width: 260px;
+            margin-top: auto;
+            margin-bottom: auto;
+            padding: 60px 0;
+        }
+
+        .auth-aside-copy .eyebrow {
+            margin-bottom: 13px;
+            color: #ffd17b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.8px;
+        }
+
+        .auth-aside-copy h2 {
+            margin-bottom: 14px;
+            font-size: clamp(28px, 4vw, 38px);
+            font-weight: 500;
+            line-height: 1.08;
+            letter-spacing: -0.8px;
+        }
+
+        .auth-aside-copy p {
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        .auth-aside-footer {
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 12px;
+            letter-spacing: 0.4px;
+        }
+
+        .auth-form-panel {
+            position: relative;
+            padding: 36px 42px 30px;
+            background:
+                linear-gradient(rgba(255, 251, 241, 0.94), rgba(255, 251, 241, 0.96)),
+                url('assets/graduation-background.png') center / cover no-repeat;
+        }
+
+        .auth-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            width: min(100%, 340px);
+            margin: 0 auto 24px;
+            border-bottom: 1px solid rgba(85, 69, 54, 0.35);
+        }
+
+        .auth-tab {
+            position: relative;
+            padding: 8px 4px 12px;
+            border: 0;
+            background: transparent;
+            color: #655d56;
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .auth-tab::after {
+            position: absolute;
+            right: 0;
+            bottom: -2px;
+            left: 0;
+            height: 3px;
+            border-radius: 99px;
+            background: #e7ab3d;
+            content: "";
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 220ms ease;
+        }
+
+        .auth-tab.active {
+            color: #9a6a1b;
+            font-weight: 700;
+        }
+
+        .auth-tab.active::after { transform: scaleX(1); }
+
+        .auth-form-title {
+            margin-bottom: 4px;
+            color: #31283b;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .auth-form-hint {
+            margin-bottom: 18px;
+            color: #756d66;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            color: #655d56;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* Role Selection Cards */
+        .role-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 9px;
+            margin-bottom: 16px;
+        }
+
+        .role-card {
+            border: 1px solid rgba(106, 82, 58, 0.26);
+            border-radius: 9px;
+            padding: 10px 6px;
+            background: rgba(255, 255, 255, 0.55);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-card:hover {
+            border-color: #d59b32;
+            background-color: rgba(255, 255, 255, 0.82);
+        }
+
+        .role-card.selected {
+            border-color: #d59b32;
+            background-color: rgba(255, 239, 205, 0.9);
+            box-shadow: 0 0 0 1px rgba(213, 155, 50, 0.2);
+        }
+
+        .role-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .role-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #3c4043;
+        }
+
+        /* Input Fields */
+
+        input {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 14px;
+            border: 1px solid rgba(106, 82, 58, 0.3);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.68);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group { margin-bottom: 10px; }
+
+        input:focus {
+            border-color: #d59b32;
+            box-shadow: 0 0 0 2px rgba(213, 155, 50, 0.18);
+        }
+
+        .submit-btn {
+            display: block;
+            min-width: 132px;
+            margin: 12px 0 0 auto;
+            border-radius: 999px;
+            background: #e9ad3e;
+            color: #34283b;
+            font-weight: 700;
+        }
+
+        .submit-btn:hover {
+            background: #f0bc58;
+            box-shadow: 0 5px 14px rgba(180, 126, 33, 0.22);
+        }
+
+        .error-message {
+            color: #d93025;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .hidden { 
+            display: none !important; 
+        }
+
+        @media (max-width: 700px) {
+            .modal-overlay { align-items: flex-start; overflow-y: auto; padding: 14px; }
+            .modal-card {
+                grid-template-columns: 1fr;
+                width: min(100%, 480px);
+                min-height: 0;
+                margin: auto;
+                border-radius: 20px;
+            }
+            .auth-aside { min-height: 132px; padding: 20px 24px; }
+            .auth-aside-copy { padding: 18px 0 6px; }
+            .auth-aside-copy .eyebrow { margin-bottom: 6px; }
+            .auth-aside-copy h2 { margin-bottom: 5px; font-size: 25px; }
+            .auth-aside-copy p, .auth-aside-footer { display: none; }
+            .auth-form-panel { padding: 22px 24px 24px; }
+            .auth-tabs { margin-bottom: 16px; }
+            .role-card { padding: 8px 4px; }
+            .close-btn { top: 12px; right: 15px; color: #fff; }
+        }
+
+        @media (max-width: 380px) {
+            .modal-overlay { padding: 8px; }
+            .auth-aside { min-height: 112px; }
+            .auth-form-panel { padding: 18px 16px 20px; }
+            .role-container { gap: 6px; }
+            .role-label { font-size: 12px; }
+        }
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 20px 24px 30px;
+            font-size: 14px;
+            color: #5f6368;
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 600ms ease, transform 600ms ease;
+        }
+
+        footer.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 560px) {
+            header { top: 8px; left: 10px; }
+            .logo { padding: 4px 9px; font-size: 17px; }
+            .landing-page { padding: 0; }
+            .poster-stage { width: 100%; margin: 0; }
+            .inspiring-title { top: 9%; font-size: clamp(28px, 8vw, 42px); }
+            .hero { width: 88%; padding: 18px 16px; }
+            .hero h1 { font-size: clamp(24px, 7vw, 32px); margin-bottom: 9px; }
+            .hero p { font-size: 12px; margin-bottom: 13px; }
+            .hero-buttons { gap: 8px; }
+            .btn { padding: 10px 15px; font-size: 13px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Inspiring poster with a sign-in card revealed during scroll -->
+    <main class="landing-page">
+        <section class="poster-stage" aria-label="College graduation illustration">
+            <header>
+                <div class="logo">🎓 <span>College Portal</span></div>
+            </header>
+            <h1 class="inspiring-title">Dream big.<br>Your future<br>starts here.</h1>
+
+            <section class="hero scroll-reveal" id="signInCard">
+                <h1>Sign in to<br>College Portal</h1>
+                <p>Access your class materials, coursework, and classroom resources all in one unified place.</p>
+
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="openAuthModal('login')">Sign In</button>
+                    <button class="btn btn-outline" onclick="openAuthModal('register')">Register New Account</button>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- Split-panel sign in / sign up popup -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-card">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+
+            <aside class="auth-aside">
+                <div class="auth-aside-brand">🎓 College Portal</div>
+                <div class="auth-aside-copy">
+                    <div class="eyebrow">YOUR NEXT CHAPTER</div>
+                    <h2 id="asideTitle">CREATE YOUR ACCOUNT</h2>
+                    <p id="asideCopy">Join your campus community and keep your learning journey moving forward.</p>
+                </div>
+                <div class="auth-aside-footer">Learn &bull; Grow &bull; Graduate</div>
+            </aside>
+
+            <section class="auth-form-panel" aria-label="Account access">
+                <div class="auth-tabs" role="tablist" aria-label="Choose account action">
+                    <button class="auth-tab active" id="registerTab" type="button" role="tab" aria-selected="true" onclick="openAuthModal('register')">Sign Up</button>
+                    <button class="auth-tab" id="loginTab" type="button" role="tab" aria-selected="false" onclick="openAuthModal('login')">Login</button>
+                </div>
+
+                <h1 class="auth-form-title" id="modalTitle">Create your account</h1>
+                <p class="auth-form-hint" id="modalSubtitle">Choose an account type and enter your details</p>
+
+                <div class="role-container" aria-label="Account type">
+                    <div class="role-card selected" onclick="selectRole('student', this)">
+                        <div class="role-icon">🎓</div>
+                        <div class="role-label">Student</div>
+                    </div>
+                    <div class="role-card" onclick="selectRole('teacher', this)">
+                        <div class="role-icon">👨‍🏫</div>
+                        <div class="role-label">Teacher</div>
+                    </div>
+                    <div class="role-card" onclick="selectRole('admin', this)">
+                        <div class="role-icon">🛡️</div>
+                        <div class="role-label">Admin</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="confirmPassword" class="hidden" placeholder="Confirm password" autocomplete="new-password">
+                </div>
+                <button class="btn submit-btn" id="modalSubmitBtn" onclick="handleAuthSubmit()">Sign Up &nbsp; ›</button>
+                <div class="error-message" id="modalError"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="scroll-reveal">
+        College Management System &bull; Secure Academic Platform
+    </footer>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8001";
+        let currentMode = "login"; // 'login' or 'register'
+        let selectedRole = "student";
+
+        const scrollRevealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+
+        document.querySelectorAll('.scroll-reveal').forEach(element => scrollRevealObserver.observe(element));
+
+        function openAuthModal(mode) {
+            const modeChanged = currentMode !== mode;
+            currentMode = mode;
+            const isLogin = mode === 'login';
+            document.getElementById('modalTitle').innerText = isLogin ? 'Sign in to your account' : 'Create your account';
+            document.getElementById('modalSubtitle').innerText = isLogin ? 'Welcome back. Enter your details to continue.' : 'Choose an account type and enter your details';
+            document.getElementById('asideTitle').innerText = isLogin ? 'WELCOME BACK' : 'CREATE YOUR ACCOUNT';
+            document.getElementById('asideCopy').innerText = isLogin
+                ? 'Sign in to pick up where you left off and keep your learning journey moving forward.'
+                : 'Join your campus community and keep your learning journey moving forward.';
+            document.getElementById('modalSubmitBtn').innerHTML = isLogin ? 'Login &nbsp; ›' : 'Sign Up &nbsp; ›';
+            document.getElementById('loginTab').classList.toggle('active', isLogin);
+            document.getElementById('loginTab').setAttribute('aria-selected', String(isLogin));
+            document.getElementById('registerTab').classList.toggle('active', !isLogin);
+            document.getElementById('registerTab').setAttribute('aria-selected', String(!isLogin));
+            document.getElementById('modalError').innerText = '';
+            
+            // Show/Hide Confirm Password
+            const confirmInput = document.getElementById('confirmPassword');
+            if (modeChanged) {
+                document.getElementById('password').value = '';
+                confirmInput.value = '';
+            }
+            if (mode === 'register') {
+                confirmInput.classList.remove('hidden');
+            } else {
+                confirmInput.classList.add('hidden');
+            }
+            document.getElementById('password').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+            
+            document.getElementById('authModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        function selectRole(role, element) {
+            selectedRole = role;
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        async function handleAuthSubmit() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorElement = document.getElementById('modalError');
+
+            if (!username || !password) {
+                errorElement.innerText = "Please fill in all fields.";
+                return;
+            }
+
+            if (currentMode === 'login') {
+                // Login Request
+                const formData = new FormData();
+                formData.append("username", username);
+                formData.append("password", password);
+
+                try {
+                    const response = await fetch(`${API_URL}/login`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('user_role', selectedRole);
+                        localStorage.setItem('username', username);
+                        
+                        // Redirect directly to the dashboard!
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        errorElement.innerText = "Invalid credentials. Please try again.";
+                    }
+                } catch (err) {
+                    errorElement.innerText = "Could not connect to the backend server.";
+                }
+            } else if (currentMode === 'register') {
+                const confirmPassword = document.getElementById('confirmPassword').value.trim();
+                
+                // Password Validation Check
+                if (password !== confirmPassword) {
+                    errorElement.innerText = "Passwords do not match.";
+                    return; 
+                }
+
+                // Register Request
+                try {
+                    const response = await fetch(`${API_URL}/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password,
+                            role: selectedRole
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert("Account created successfully! You can now sign in.");
+                        openAuthModal('login');
+                    } else {
+                        const errorData = await response.json();
+                        
+                        // Check if FastAPI sent an array of validation errors
+                        if (Array.isArray(errorData.detail)) {
+                            // Extract just the error messages and join them
+                            errorElement.innerText = errorData.detail.map(err => err.msg).join(', ');
+                        } else {
+                            // Otherwise, show the standard string error
+                            errorElement.innerText = errorData.detail || "Registration failed.";
+                        }
+                    }
+                } catch (err) {
+                    errorElement.innerText = "Could not connect to the backend server.";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
