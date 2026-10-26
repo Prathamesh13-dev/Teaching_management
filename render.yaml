@@ -2,21 +2,13 @@ services:
   - type: web
     name: teaching-management
     runtime: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r SEPM_backend/requirements.txt
     startCommand: cd SEPM_backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /healthz
-    disk:
-      name: teaching-management-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        value: sqlite:////var/data/sepm_project.db
-      - key: UPLOAD_DIR
-        value: /var/data/uploads
       - key: INITIAL_ADMIN_USERNAME
         sync: false
       - key: INITIAL_ADMIN_PASSWORD
