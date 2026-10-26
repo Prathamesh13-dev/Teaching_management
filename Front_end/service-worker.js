@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'college-portal-shell-v1';
+const SHELL_CACHE = 'college-portal-shell-v5';
 const APP_SHELL = [
     './',
     './index.html',

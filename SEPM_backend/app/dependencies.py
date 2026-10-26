@@ -5,10 +5,8 @@ from jose import jwt, JWTError
 from .database import SessionLocal
 from . import models, auth
 
-# This tells FastAPI where the client should go to get the token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# Dependency to get the database session
 def get_db():
     db = SessionLocal()
     try:
@@ -16,15 +14,13 @@ def get_db():
     finally:
         db.close()
 
-# Dependency to get the currently logged-in user
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Decode the token using the secret key from auth.py
         payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
@@ -32,18 +28,32 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
     
-    # Fetch the user from the database
     user = db.query(models.User).filter(models.User.username == username).first()
     if user is None:
         raise credentials_exception
     
     return user
 
-# Dependency to ensure the user is specifically a teacher
-def get_current_teacher(current_user: models.User = Depends(get_current_user)):
+def get_current_teacher(current_user: models.User = Depends(get_current_user)) -> models.User:
     if current_user.role != models.UserRole.teacher:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
-            detail="You do not have permission to perform this action. Teachers only."
+            detail="Teacher privileges required for this action."
+        )
+    return current_user
+
+def get_current_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    if current_user.role != models.UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Admin privileges required for this action."
+        )
+    return current_user
+
+def get_current_teacher_or_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    if current_user.role not in [models.UserRole.teacher, models.UserRole.admin]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Teacher or Administrator privileges required for this action."
         )
     return current_user

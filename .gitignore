@@ -9,3 +9,4 @@ venv/
 *.db
 SEPM_backend/uploads/
 SEPM_backend/.vscode/
+SEPM_project/

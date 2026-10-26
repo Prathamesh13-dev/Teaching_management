@@ -499,11 +499,20 @@
 
             <section class="hero scroll-reveal" id="signInCard">
                 <h1>Sign in to<br>College Portal</h1>
-                <p>Access your class materials, coursework, and classroom resources all in one unified place.</p>
+                <p>Access class materials, assignments, whiteboard lessons, attendance, and study groups all in one place.</p>
 
                 <div class="hero-buttons">
                     <button class="btn btn-primary" onclick="openAuthModal('login')">Sign In</button>
                     <button class="btn btn-outline" onclick="openAuthModal('register')">Register New Account</button>
+                </div>
+
+                <div id="demoLogins" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(85, 69, 54, 0.2);">
+                    <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #785c35; margin-bottom: 8px;">🚀 Quick Demo Logins</p>
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" onclick="quickLogin('student')" style="background: rgba(255,255,255,0.85); border: 1px solid #d59b32; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #3c4043; cursor: pointer; transition: all 0.2s;">🎓 Student Demo</button>
+                        <button type="button" onclick="quickLogin('teacher')" style="background: rgba(255,255,255,0.85); border: 1px solid #d59b32; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #3c4043; cursor: pointer; transition: all 0.2s;">👨‍🏫 Teacher Demo</button>
+                        <button type="button" onclick="quickLogin('admin')" style="background: rgba(255,255,255,0.85); border: 1px solid #d59b32; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #3c4043; cursor: pointer; transition: all 0.2s;">🛡️ Admin Demo</button>
+                    </div>
                 </div>
             </section>
         </section>
@@ -531,20 +540,12 @@
                 </div>
 
                 <h1 class="auth-form-title" id="modalTitle">Create your account</h1>
-                <p class="auth-form-hint" id="modalSubtitle">Choose an account type and enter your details</p>
+                <p class="auth-form-hint" id="modalSubtitle">Students can register here. Ask an administrator for a teacher account.</p>
 
-                <div class="role-container" aria-label="Account type">
+                <div class="role-container" id="roleContainer" aria-label="Account type">
                     <div class="role-card selected" onclick="selectRole('student', this)">
                         <div class="role-icon">🎓</div>
                         <div class="role-label">Student</div>
-                    </div>
-                    <div class="role-card" onclick="selectRole('teacher', this)">
-                        <div class="role-icon">👨‍🏫</div>
-                        <div class="role-label">Teacher</div>
-                    </div>
-                    <div class="role-card" onclick="selectRole('admin', this)">
-                        <div class="role-icon">🛡️</div>
-                        <div class="role-label">Admin</div>
                     </div>
                 </div>
 
@@ -569,9 +570,11 @@
     </footer>
 
     <script>
-        const API_URL = "http://127.0.0.1:8001";
+        const IS_LOCAL_ENVIRONMENT = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+        const API_URL = IS_LOCAL_ENVIRONMENT ? "http://127.0.0.1:8001" : window.location.origin;
         let currentMode = "login"; // 'login' or 'register'
         let selectedRole = "student";
+        if (!IS_LOCAL_ENVIRONMENT) document.getElementById('demoLogins').hidden = true;
 
         const scrollRevealObserver = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
@@ -589,7 +592,7 @@
             currentMode = mode;
             const isLogin = mode === 'login';
             document.getElementById('modalTitle').innerText = isLogin ? 'Sign in to your account' : 'Create your account';
-            document.getElementById('modalSubtitle').innerText = isLogin ? 'Welcome back. Enter your details to continue.' : 'Choose an account type and enter your details';
+            document.getElementById('modalSubtitle').innerText = isLogin ? 'Welcome back. Enter your details to continue.' : 'Students can register here. Ask an administrator for a teacher account.';
             document.getElementById('asideTitle').innerText = isLogin ? 'WELCOME BACK' : 'CREATE YOUR ACCOUNT';
             document.getElementById('asideCopy').innerText = isLogin
                 ? 'Sign in to pick up where you left off and keep your learning journey moving forward.'
@@ -622,9 +625,56 @@
         }
 
         function selectRole(role, element) {
+            if (role !== 'student') return;
             selectedRole = role;
             document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
             element.classList.add('selected');
+        }
+
+        async function quickLogin(role) {
+            const credentials = {
+                student: { user: 'student_demo', pass: 'student123' },
+                teacher: { user: 'teacher_demo', pass: 'teacher123' },
+                admin: { user: 'admin', pass: 'admin123' }
+            };
+            const target = credentials[role];
+            if (!target) return;
+
+            const formData = new FormData();
+            formData.append("username", target.user);
+            formData.append("password", target.pass);
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_role', data.role || role);
+                    localStorage.setItem('username', data.username || target.user);
+                    
+                    // Fetch profile to verify
+                    try {
+                        const meRes = await fetch(`${API_URL}/me`, {
+                            headers: { 'Authorization': `Bearer ${data.access_token}` }
+                        });
+                        if (meRes.ok) {
+                            const profile = await meRes.json();
+                            localStorage.setItem('user_role', profile.role);
+                            localStorage.setItem('username', profile.username);
+                        }
+                    } catch (e) {}
+
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert("Could not log in with demo account. Ensure backend is running.");
+                }
+            } catch (err) {
+                alert("Cannot connect to server at " + API_URL + ". Please ensure the backend server is running.");
+            }
         }
 
         async function handleAuthSubmit() {
@@ -652,10 +702,22 @@
                     if (response.ok) {
                         const data = await response.json();
                         localStorage.setItem('access_token', data.access_token);
-                        localStorage.setItem('user_role', selectedRole);
-                        localStorage.setItem('username', username);
+                        localStorage.setItem('user_role', data.role || selectedRole);
+                        localStorage.setItem('username', data.username || username);
                         
-                        // Redirect directly to the dashboard!
+                        // Fetch verified profile from DB
+                        try {
+                            const meRes = await fetch(`${API_URL}/me`, {
+                                headers: { 'Authorization': `Bearer ${data.access_token}` }
+                            });
+                            if (meRes.ok) {
+                                const profile = await meRes.json();
+                                localStorage.setItem('user_role', profile.role);
+                                localStorage.setItem('username', profile.username);
+                            }
+                        } catch (e) {}
+
+                        // Redirect directly to dashboard!
                         window.location.href = 'dashboard.html';
                     } else {
                         errorElement.innerText = "Invalid credentials. Please try again.";
